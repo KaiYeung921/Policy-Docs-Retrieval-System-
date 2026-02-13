@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
-
-import sys
 import langextract as lx
 import textwrap
+import sys
+
 
 if len(sys.argv) != 2:
     print("Usage: ./extract.py <input_text_file>")
@@ -12,14 +11,14 @@ input_file = sys.argv[1]
 
 try:
     with open(input_file, "r") as f:
-        input=f.read()
+        text = f.read()
 except FileNotFoundError:
     print("File not found.")
     sys.exit(1)
 
 
 
-
+# Define extraction task
 prompt = textwrap.dedent("""
     Extract only specfically listed variables in this legal family court document. The legal custody will always come first and then the phyiscal custody.
     The variables being:
@@ -30,10 +29,10 @@ prompt = textwrap.dedent("""
     Provide meaningful attributes for each entity to add context
 """)
 
-
+# Provide example
 examples = [
     lx.data.ExampleData(
-        text=input
+        text=text
         extractions=[
             lx.data.Extraction(
                 extraction_class="Legal Custody",
@@ -47,9 +46,9 @@ examples = [
     )
 ]
 
-
+# Run extraction
 result = lx.extract(
-    text_or_documents=input,
+    text_or_documents=text,
     prompt_description=prompt,
     examples=examples,
     model_id="mistral",                  # Change to your model
