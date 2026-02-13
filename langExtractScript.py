@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
-
 import langextract as lx
 import textwrap
 import sys
-
 
 if len(sys.argv) != 2:
     print("Usage: ./extract.py <input_text_file>")
@@ -13,55 +11,117 @@ if len(sys.argv) != 2:
 input_file = sys.argv[1]
 
 try:
-    with open(input_file, "r") as f:
+    with open(input_file, "r", encoding="utf-8") as f:
         text = f.read()
 except FileNotFoundError:
     print("File not found.")
     sys.exit(1)
 
 
-
-# Define extraction task
 prompt = textwrap.dedent("""
-    Extract only specfically listed variables in this legal family court document. The legal custody will always come first and then the phyiscal custody.
-    The variables being:
-    Legal Custody
-    Physical Custody
+You are extracting structured data from a California FL-180 Judgment form.
 
-    Do not paraphrase or overlap entities.
-    Provide meaningful attributes for each entity to add context
+Extract ONLY the following entities if explicitly present:
+
+1. Case Number
+   - Appears near top right
+   - Often labeled "CASE NUMBER:"
+   - Example: 17CHFL00863
+
+2. Petitioner Name
+   - Appears after "PETITIONER:"
+
+3. Respondent Name
+   - Appears after "RESPONDENT:"
+
+4. Jurisdiction Date
+   - Appears after:
+     "The court acquired jurisdiction of the respondent on (date):"
+
+5. Judgment Type
+   - One of:
+       Dissolution
+       Legal Separation
+       Nullity
+   - Based only on which option is selected.
+
+6. Termination Date
+   - Appears after:
+       "Date marital or domestic partnership status ends:"
+       OR
+       "(1) on (specify date):"
+
+STRICT RULES:
+- Extract exact text from the document.
+- Do not paraphrase.
+- Do not infer.
+- If not clearly present, do not extract.
+- Do not combine multiple fields.
+- Output only valid structured extractions.
 """)
 
-# Provide example
+
 examples = [
     lx.data.ExampleData(
-        text="5. Custody. Custody of the minor children of the parlies is awarded as follows: ChiId's name Date of birlh Leal custod t_o Phsical custod to (Person who makes decIs/ons about (person with whom the child /ives) health, education, etc.) Jordan Alexander 03/08/2012 Joint (Petitioner & Respondent) Respondent. Castaneda Gonzales",
+        text="""
+        PETITIONER: John Smith
+        RESPONDENT: Jane Smith
+        CASE NUMBER: 19FL12345
+        The court acquired jurisdiction of the respondent on (date): 03/15/2019
+        Dissolution
+        Date marital or domestic partnership status ends: 05/01/2020
+        """,
         extractions=[
             lx.data.Extraction(
-                extraction_class="Legal Custody",
-                extraction_text="Joint (Petitioner & Respondent)",
-		attributes={"type": "joint"}
+                extraction_class="Case Number",
+                extraction_text="19FL12345",
+                attributes={}
             ),
             lx.data.Extraction(
-                extraction_class="Physical Custody",
-                extraction_text="Respondent",
-		attributes={"type": "sole"}
+                extraction_class="Petitioner Name",
+                extraction_text="John Smith",
+                attributes={}
+            ),
+            lx.data.Extraction(
+                extraction_class="Respondent Name",
+                extraction_text="Jane Smith",
+                attributes={}
+            ),
+            lx.data.Extraction(
+                extraction_class="Jurisdiction Date",
+                extraction_text="03/15/2019",
+                attributes={}
+            ),
+            lx.data.Extraction(
+                extraction_class="Judgment Type",
+                extraction_text="Dissolution",
+                attributes={}
+            ),
+            lx.data.Extraction(
+                extraction_class="Termination Date",
+                extraction_text="05/01/2020",
+                attributes={}
             ),
         ]
     )
 ]
 
-# Run extraction
+
 result = lx.extract(
     text_or_documents=text,
     prompt_description=prompt,
     examples=examples,
-    model_id="llama3",                  # Change to your model
-    model_url="http://localhost:11434",    # Ollama default endpoint
+    model_id="llama3",
+    model_url="http://localhost:11434",
     fence_output=False,
     use_schema_constraints=True,
+    temperature=0.0,
+    extraction_passes=3,
+    max_workers=20,
+    max_char_buffer=1000
 )
 
-# Print results
+
 for e in result.extractions:
-    print(f"{e.extraction_class}: '{e.extraction_text}' → {e.attributes}")
+    print(f"{e.extraction_class}: '{e.extraction_text}'")
+
