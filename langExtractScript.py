@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+
 import langextract as lx
 import textwrap
 import sys
@@ -32,15 +35,17 @@ prompt = textwrap.dedent("""
 # Provide example
 examples = [
     lx.data.ExampleData(
-        text=text
+        text="5. Custody. Custody of the minor children of the parlies is awarded as follows: ChiId's name Date of birlh Leal custod t_o Phsical custod to (Person who makes decIs/ons about (person with whom the child /ives) health, education, etc.) Jordan Alexander 03/08/2012 Joint (Petitioner & Respondent) Respondent. Castaneda Gonzales",
         extractions=[
             lx.data.Extraction(
                 extraction_class="Legal Custody",
                 extraction_text="Joint (Petitioner & Respondent)",
+		attributes={"type": "joint"}
             ),
             lx.data.Extraction(
                 extraction_class="Physical Custody",
                 extraction_text="Respondent",
+		attributes={"type": "sole"}
             ),
         ]
     )
@@ -51,10 +56,10 @@ result = lx.extract(
     text_or_documents=text,
     prompt_description=prompt,
     examples=examples,
-    model_id="mistral",                  # Change to your model
+    model_id="llama3",                  # Change to your model
     model_url="http://localhost:11434",    # Ollama default endpoint
     fence_output=False,
-    use_schema_constraints=False,
+    use_schema_constraints=True,
 )
 
 # Print results
