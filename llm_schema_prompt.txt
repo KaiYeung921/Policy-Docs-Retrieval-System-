@@ -1,0 +1,48 @@
+llm --system "You are a specialized legal data extraction expert. 
+1. LOGIC: If 'No property subject to division' is checked, set asset_division_specified to FALSE.
+2. INCOME: Extract only the NET monthly income for both parties.
+3. TIMESHARE: Extract only the Petitioner's numerical percentage (e.g., 30). If not found, return null.
+4. SINGLE CHILD: Assume extraction is for one child only.
+5. PRECISION: Distinguish strictly between Petitioner and Respondent as labeled in the header.
+Output the final JSON with 4-space indentation to ensure human readability." \
+--model gemini-3.1-pro-preview \
+--schema '{
+  "type": "object",
+  "properties": {
+    "case_info": {
+      "type": "object",
+      "properties": {
+        "agreement_type": {"type": "string", "enum": ["Dissolution", "Legal Separation", "Nullity"]}
+      }
+    },
+    "legal_custody": {
+      "type": "object",
+      "properties": {
+        "award_type": {"type": "string", "enum": ["Sole Petitioner", "Sole Respondent", "Joint", "Other"]},
+        "tie_breaker_clause": {"type": "string"},
+        "consultation_requirement": {"type": "boolean"},
+        "domains_enumerated": {"type": "boolean"}
+      }
+    },
+    "physical_custody": {
+      "type": "object",
+      "properties": {
+        "primary_residence": {"type": "string", "enum": ["Petitioner", "Respondent", "Joint", "None"]},
+        "petitioner_timeshare_percentage": {"type": "number"},
+        "regular_schedule_specified": {"type": "boolean"},
+        "exchange_times_specified": {"type": "boolean"},
+        "exchange_location_specified": {"type": "boolean"},
+        "transportation_responsibility": {"type": "string"}
+      }
+    },
+    "financials": {
+      "type": "object",
+      "properties": {
+        "petitioner_monthly_net_income": {"type": "number"},
+        "respondent_monthly_net_income": {"type": "number"},
+        "child_support_monthly_amount": {"type": "number"},
+        "asset_division_specified": {"type": "boolean"}
+      }
+    }
+  }
+}' --save legal-extract-v2
