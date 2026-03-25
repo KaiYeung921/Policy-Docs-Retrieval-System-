@@ -1,0 +1,80 @@
+llm --system "You are a specialized legal coder. 
+1. GENDER: Always infer Petitioner and Respondent gender from names/pronouns.
+2. 14-DAY CYCLE: Average all visitation into a 14-day count (10 weekdays, 4 weekend days).
+3. RADIUS: Extract specific geographic strings (e.g., 'Los Angeles County').
+4. ASSETS: If 'No property subject to division' is checked, set asset_division_specified to FALSE.
+5. INCOME: Extract NET monthly income only.
+6. TIMESHARE: Extract ONLY the Petitioner's numerical percentage.
+7. OUTPUT: Return ONLY a raw, 4-space indented JSON object." \
+--model gemini-3.1-pro-preview \
+--schema '{
+  "type": "object",
+  "properties": {
+    "child_and_party": {
+      "type": "object",
+      "properties": {
+        "which_kid_is_this": {"type": "string"},
+        "child_birth_year": {"type": "number"},
+        "petitioner_gender": {"type": "string", "enum": ["Male", "Female", "Non-binary"]},
+        "respondent_gender": {"type": "string", "enum": ["Male", "Female", "Non-binary"]}
+      }
+    },
+    "legal_custody": {
+      "type": "object",
+      "properties": {
+        "award_type": {"type": "string"},
+        "tie_breaker_clause": {"type": "string"},
+        "consultation_requirement": {"type": "boolean"},
+        "domains_enumerated": {
+          "type": "object",
+          "properties": {
+            "education": {"type": "boolean"}, "health": {"type": "boolean"}, "extracurriculars": {"type": "boolean"},
+            "religion": {"type": "boolean"}, "documents": {"type": "boolean"}, "other": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "physical_custody_and_schedule": {
+      "type": "object",
+      "properties": {
+        "primary_residence": {"type": "string"},
+        "petitioner_timeshare_percentage": {"type": "number"},
+        "child_specific_variation": {"type": "boolean"},
+        "weekday_schedule": {"type": "string"},
+        "weekly_schedule_rotation": {"type": "string"},
+        "weekdays_spent_with_petitioner": {"type": "number"},
+        "weekdays_spent_with_respondent": {"type": "number"},
+        "weekend_days_spent_with_petitioner": {"type": "number"},
+        "weekend_days_spent_with_respondent": {"type": "number"},
+        "exchange_times": {"type": "string"},
+        "exchange_location": {"type": "string"},
+        "transportation": {"type": "string"},
+        "makeup_policy": {"type": "boolean"}
+      }
+    },
+    "visitation_and_restrictions": {
+      "type": "object",
+      "properties": {
+        "holiday_list": {"type": "boolean"}, "holiday_rotation": {"type": "string"}, "vacation_provision": {"type": "boolean"},
+        "travel_restrictions": {"type": "boolean"}, "supervised_visitation": {"type": "boolean"}, "conditions_for_visitation": {"type": "string"},
+        "behavioral_restrictions": {"type": "boolean"}, "no_contact_clause": {"type": "boolean"}, "restraining_order": {"type": "boolean"}
+      }
+    },
+    "communication_and_procedures": {
+      "type": "object",
+      "properties": {
+        "parent_parent_contact": {"type": "boolean"}, "parent_child_contact": {"type": "boolean"}, "records_access": {"type": "boolean"},
+        "non_disparagement_clause": {"type": "boolean"}, "notice_requirement": {"type": "string"}, "radius_rule": {"type": "string"},
+        "consent_requirement": {"type": "boolean"}, "mediation_step": {"type": "boolean"}, "material_change_clause": {"type": "boolean"}
+      }
+    },
+    "financials": {
+      "type": "object",
+      "properties": {
+        "petitioner_monthly_net_income": {"type": "number"}, "respondent_monthly_net_income": {"type": "number"},
+        "child_support_payer": {"type": "string"}, "child_support_amount": {"type": "number"}, "taxes_clause": {"type": "boolean"},
+        "asset_division_specified": {"type": "boolean"}
+      }
+    }
+  }
+}' --save legal-extract-full
